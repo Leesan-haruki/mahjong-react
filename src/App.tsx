@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import './App.css';
 
-import { GamePai, allPai, allPaiNum, tehaiNum, wanpaiNum, sortTehai } from './pai'
-import { User, KyokuState, wind, isRonUser } from './user';
-import { isTenpai } from './judge';
+import { GamePai, Tehai, allPai, allPaiNum, tehaiNum, wanpaiNum, sortTehai, getPon } from './pai'
+import { User, KyokuState, wind, isRonUser, isPonUser } from './user';
+import { isTenpai, ponList } from './judge';
 
 const initPaiyama = (): GamePai[] => {
   let arr:number[] = [...Array(allPaiNum)].map((_, i) => i)
@@ -18,38 +18,53 @@ const initPaiyama = (): GamePai[] => {
   let initArr:GamePai[] = [];
   for(let i = 0; i < allPaiNum; i++) {
     let pushPai = allPai[Math.floor(arr[i] / 4)];
-    initArr.push({unique: i, kind: pushPai});
+    initArr.push({unique: i, kind: pushPai, decided: true, side: false});
   }
 
   return initArr;
 }
 
 const initGame = (paiyama:GamePai[]): User[] => {
-  const user1:User = { userId: 0, tehai: paiyama.slice(0, tehaiNum), river: [], machi: [] };
-  const user2:User = { userId: 1, tehai: paiyama.slice(tehaiNum, tehaiNum * 2), river: [], machi: [] };
-  const user3:User = { userId: 2, tehai: paiyama.slice(tehaiNum * 2, tehaiNum * 3), river: [], machi: [] };
-  const user4:User = { userId: 3, tehai: paiyama.slice(tehaiNum * 3, tehaiNum * 4), river: [], machi: [] };
+  const tehai1: Tehai = {menzen: sortTehai(paiyama.slice(0, tehaiNum)), fuuro: []};
+  const tehai2: Tehai = {menzen: sortTehai(paiyama.slice(tehaiNum, tehaiNum * 2)), fuuro: []};
+  const tehai3: Tehai = {menzen: sortTehai(paiyama.slice(tehaiNum * 2, tehaiNum * 3)), fuuro: []};
+  const tehai4: Tehai = {menzen: sortTehai(paiyama.slice(tehaiNum * 3, tehaiNum * 4)), fuuro: []};
+
+  const user1: User = {
+    userId: 0, tehai: tehai1, fuuro: [], river: [], machi: [], 
+    pon: ponList(tehai1.menzen), pon_waiting: false, ron_waiting: false
+  };
+  const user2: User = {
+    userId: 1, tehai: tehai2, fuuro: [], river: [], machi: [], 
+    pon: ponList(tehai2.menzen), pon_waiting: false, ron_waiting: false
+  };
+  const user3: User = {
+    userId: 2, tehai: tehai3, fuuro: [], river: [], machi: [],
+    pon: ponList(tehai3.menzen), pon_waiting: false, ron_waiting: false
+  };
+  const user4: User = {
+    userId: 3, tehai: tehai4, fuuro: [], river: [], machi: [],
+    pon: ponList(tehai4.menzen), pon_waiting: false, ron_waiting: false
+  };
 
   return [user1, user2, user3, user4];
 }
 
 const App:React.FC<{}> = () => {
   const [paiyama, changePaiyama] = useState<GamePai[]>(initPaiyama());
-  const [users, changeUsers] = useState<User[]>(initGame(paiyama));
   const [kyokuState, changeKyokuState] = useState<KyokuState>(
-    { activeUser: 0, tsumo_num: tehaiNum * 4, finish: false, ron_waiting: [false, false, false, false] }
+    { activeUser: 0, tsumo_num: tehaiNum * 4, finish: false, suspend: false, userState: initGame(paiyama)}
   );
+  console.log(kyokuState.activeUser, kyokuState.suspend);
 
-  // console.log(kyokuState.tsumo_num);
-  
   return (
     <>
       { kyokuState.finish ? <h1>流局</h1> : null }
-      { users.map((user, i) => {
+      { kyokuState.userState.map((user, i) => {
         return <div>
-          <UserField key={ i } user={ user } users={ users } paiyama={ paiyama }
-            kyokuState={ kyokuState } changeUsers={ changeUsers } changeKyokuState={ changeKyokuState } />
-          </div>
+          <UserField key={ i } user={ user } paiyama={ paiyama }
+            kyokuState={ kyokuState } changeKyokuState={ changeKyokuState } />
+        </div>
       }) }
       <Wanpai paiyama={ paiyama }/>
     </>
@@ -57,10 +72,9 @@ const App:React.FC<{}> = () => {
 }
 
 const UserField:React.FC<{
-  user:User, users:User[], paiyama:GamePai[], kyokuState:KyokuState,
-  changeUsers:React.Dispatch<React.SetStateAction<User[]>>,
+  user:User, paiyama:GamePai[], kyokuState:KyokuState,
   changeKyokuState: React.Dispatch<React.SetStateAction<KyokuState>>
-}> = ({ user, users, paiyama, kyokuState, changeUsers, changeKyokuState }) => {
+}> = ({ user, paiyama, kyokuState, changeKyokuState }) => {
   return <>
     <h3>
       { wind[user.userId] }
@@ -69,16 +83,35 @@ const UserField:React.FC<{
       }) : null }
       { user.machi.indexOf(paiyama[kyokuState.tsumo_num].kind) !== -1 && user.userId === kyokuState.activeUser ? 
         <><button onClick={() => { changeKyokuState({ ...kyokuState, finish: true }) }}>ツモ</button></> : null }
-      { kyokuState.ron_waiting[user.userId] ? <>
+      { user.ron_waiting ? <>
         <button onClick={() => { changeKyokuState({ ...kyokuState, finish: true }) }}>ロン</button>
-        <button onClick={() => { changeKyokuState({ ...kyokuState, ron_waiting: [false, false, false, false] }) }}>
-        キャンセル</button></> : null }
+        <button onClick={() => { changeKyokuState({ ...kyokuState, activeUser: (kyokuState.activeUser + 1) % 4,
+          tsumo_num: kyokuState.tsumo_num + 1, suspend: false,
+          userState: kyokuState.userState.map((prevUser) => prevUser.userId === user.userId ? 
+          {...prevUser, ron_waiting: false} : prevUser) }) }}>キャンセル</button>
+        </> : null 
+      }
+      { user.pon_waiting ? <>
+        <button onClick={() => {
+          changeKyokuState({ ...kyokuState, activeUser: user.userId, userState: 
+            kyokuState.userState.map((prevUser) => prevUser.userId === user.userId ? { ...prevUser, 
+              tehai: getPon(prevUser.tehai, kyokuState.userState[kyokuState.activeUser].river.slice(-1)[0], 
+              user.userId, kyokuState.activeUser) } :
+              ( (prevUser.userId === kyokuState.activeUser ) ? { ...prevUser, river: prevUser.river.slice(0, -1) } : prevUser )
+            )
+          }); 
+        }}>ポン</button>
+        <button onClick={() => { changeKyokuState({ ...kyokuState, activeUser: (kyokuState.activeUser + 1) % 4, 
+          tsumo_num: kyokuState.tsumo_num + 1, suspend: false, userState: kyokuState.userState.map((prevUser) => 
+            prevUser.userId === user.userId ? {...prevUser, pon_waiting: false} : prevUser) }) }}>キャンセル</button>
+        </> : null 
+      }
     </h3>
-    <Handtiles tehai={ sortTehai(user.tehai) } user={ user } users={ users } paiyama={ paiyama } river={ user.river }
-      kyokuState = { kyokuState } changeUsers={ changeUsers } changeKyokuState={ changeKyokuState } />
+    <Handtiles tehai={ user.tehai } user={ user } paiyama={ paiyama } river={ user.river }
+      kyokuState = { kyokuState } changeKyokuState={ changeKyokuState } />
     <span>　　　</span>
-    { user.userId === kyokuState.activeUser ? <Tile tile={ paiyama[kyokuState.tsumo_num] } user={ user } users={ users }
-      paiyama={ paiyama } kyokuState={ kyokuState } changeUsers={ changeUsers } changeKyokuState={ changeKyokuState } />
+    { (user.userId === kyokuState.activeUser && !kyokuState.suspend) ? <Tile tile={ paiyama[kyokuState.tsumo_num] } user={ user }
+      paiyama={ paiyama } kyokuState={ kyokuState } changeKyokuState={ changeKyokuState } />
       : <img src={`/img/1m.gif`} style={{"visibility": 'hidden'}} alt="fa" /> }
     <span>　　　</span>
     <River tiles={ user.river } />
@@ -86,47 +119,71 @@ const UserField:React.FC<{
 }
 
 const Handtiles:React.FC<{
-  tehai:GamePai[], user:User, users:User[], paiyama:GamePai[], river:GamePai[],
-  kyokuState:KyokuState, changeUsers:React.Dispatch<React.SetStateAction<User[]>>, 
-  changeKyokuState: React.Dispatch<React.SetStateAction<KyokuState>>
-}> = ({ tehai, user, users, paiyama, kyokuState, changeUsers, changeKyokuState }) => {
+  tehai:Tehai, user:User, paiyama:GamePai[], river:GamePai[],
+  kyokuState:KyokuState, changeKyokuState: React.Dispatch<React.SetStateAction<KyokuState>>
+}> = ({ tehai, user, paiyama, kyokuState, changeKyokuState }) => {
   return <>
   {
-    tehai.map((e, i) => {
-      return <Tile key={ i } tile={ e } user={ user } users={ users } paiyama={ paiyama } kyokuState={ kyokuState }
-              changeUsers={ changeUsers } changeKyokuState={ changeKyokuState }/>
+    tehai.menzen.map((e, i) => {
+      return <Tile key={ i } tile={ e } user={ user } paiyama={ paiyama } kyokuState={ kyokuState }
+              changeKyokuState={ changeKyokuState }/>
+    })
+  }
+  <span>　</span>
+  {
+    tehai.fuuro.map((e, i) => {
+      return <StaticTile key={ i } tile={ e }/>
     })
   }
   </>
 }
 
 const Tile:React.FC<{
-  tile:GamePai, user:User, users:User[], paiyama:GamePai[], kyokuState:KyokuState,
-  changeUsers: React.Dispatch<React.SetStateAction<User[]>>,
+  tile:GamePai, user:User, paiyama:GamePai[], kyokuState:KyokuState,
   changeKyokuState: React.Dispatch<React.SetStateAction<KyokuState>>
-}> = ({ tile, user, users, paiyama, kyokuState, changeUsers, changeKyokuState }) => {
+}> = ({ tile, user, paiyama, kyokuState, changeKyokuState }) => {
   return <img src={ `/img/${tile.kind.filename}` } alt={ tile.kind.name } 
-      style={ user.userId === kyokuState.activeUser && !kyokuState.finish && !kyokuState.ron_waiting.some(e => e) ? 
-        {cursor: 'pointer'} : {cursor: 'not-allowed'} }
-      onClick={ user.userId === kyokuState.activeUser ? () => {
-        changeUsers((prevUsers) => prevUsers.map((user) => (user.userId === kyokuState.activeUser) ? 
-          {
-            userId: user.userId, river: [...user.river, tile],
-            tehai: sortTehai(user.tehai.map((pai) => (pai.unique === tile.unique ?
-              paiyama[kyokuState.tsumo_num] : pai))),
-            machi: isTenpai(user.tehai.map((pai) => (pai.unique === tile.unique ?
-              paiyama[kyokuState.tsumo_num] : pai)))
-          } : {
-            userId: user.userId, river: user.river, tehai: user.tehai, machi: isTenpai(user.tehai)
+      style={ ( user.userId === kyokuState.activeUser && !kyokuState.finish && !kyokuState.suspend ) ? 
+        {cursor: 'pointer'} : {cursor: 'not-allowed'}
+      }
+      onClick={ () => {
+        let suspend: boolean = false;
+        kyokuState.userState.forEach( u => {
+          if(!(u.userId === kyokuState.activeUser)){
+            suspend = suspend || isRonUser(tile.kind, u.machi, u.river.map(r => r.kind)) || isPonUser(tile.kind, u.pon);
           }
-        ));
+        });
         changeKyokuState({
-          activeUser: (kyokuState.activeUser + 1) % 4, tsumo_num: kyokuState.tsumo_num + 1, 
+          activeUser: suspend ? kyokuState.activeUser : (kyokuState.activeUser + 1) % 4,
+          tsumo_num: suspend ? kyokuState.tsumo_num : kyokuState.tsumo_num + 1, 
           finish: kyokuState.tsumo_num >= allPaiNum - wanpaiNum - 1 ? true : false,
-          ron_waiting: users.map((u, i) => i === user.userId ? 
-            false : isRonUser(tile.kind, u.machi, u.river.map(r => r.kind)))
-        })
-      } : () => {}} />
+          suspend: suspend,
+          userState: kyokuState.userState.map((prevUser) => 
+            prevUser.userId === kyokuState.activeUser ? 
+            {
+              ...prevUser,
+              river: [...prevUser.river, tile],
+              pon_waiting: false,
+              ron_waiting: false,
+              tehai: { menzen: sortTehai(prevUser.tehai.menzen.map((pai) => (pai.unique === tile.unique ?
+                paiyama[kyokuState.tsumo_num] : pai))
+                .filter((pai) => kyokuState.suspend ? pai.unique !== paiyama[kyokuState.tsumo_num].unique : true ) ),
+                fuuro: prevUser.tehai.fuuro },
+              machi: isTenpai(prevUser.tehai.menzen.map((pai) => (pai.unique === tile.unique ?
+                paiyama[kyokuState.tsumo_num] : pai))
+                .filter((pai) => kyokuState.suspend ? pai.unique !== paiyama[kyokuState.tsumo_num].unique : true ) ),
+              pon: ponList(sortTehai(prevUser.tehai.menzen.map((pai) => (pai.unique === tile.unique ?
+                paiyama[kyokuState.tsumo_num] : pai))
+                .filter((pai) => kyokuState.suspend ? pai.unique !== paiyama[kyokuState.tsumo_num].unique : true ) ))
+            } : 
+            {
+              ...prevUser,
+              ron_waiting: isRonUser(tile.kind, prevUser.machi, prevUser.river.map(r => r.kind)),
+              pon_waiting: isPonUser(tile.kind, prevUser.pon)
+            }
+          )
+        });
+      }} />
 }
 
 const River:React.FC<{ tiles:GamePai[] }> = ({ tiles }) => {
@@ -152,7 +209,7 @@ const StaticTile:React.FC<{ tile:GamePai, hidden?:boolean }> = ({ tile, hidden }
   if(hidden){
     return <img src={ `/img/ura.png` } alt={ "ura" } />
   }
-  return <img src={ `/img/${tile.kind.filename}` } alt={ tile.kind.name } />
+  return <img src={ `/img/${tile.kind.filename}` } alt={ tile.kind.name } style={ tile.side ? {transform: "rotate(90deg)" } : {} } />
 }
 
 export default App;

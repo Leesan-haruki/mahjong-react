@@ -1,4 +1,4 @@
-import { GamePai, Pai, getPaiFromName } from './pai'
+import { GamePai, Pai, Tehai, getPaiFromName } from './pai'
 
 type Machi = "tanki" | "shabo" | "penchan" | "kanchan" | "ryanmen"
 
@@ -108,65 +108,140 @@ const isTatsu = (counter: paiCounter[], idx1: number, idx2: number): [paiCounter
 	else return [counter, false, "", []];
 }
 
-// 順順順、順順刻、順刻順、順刻刻、刻順順、刻順刻、刻刻順、刻刻刻
-const isMentsu3 = (counter9: paiCounter[]): boolean => {
-  let returnFlag: boolean = false;
+const isMentsu1 = (counter3: paiCounter[]): boolean => {
+	let returnFlag: boolean = false;
 
-  const [shuntsu1Counter6, flag_s] = isShuntsu(counter9);
-  if(flag_s){
-    const [shuntsu2Counter3, flag_ss] = isShuntsu(shuntsu1Counter6);
-    if(flag_ss){
-      const [shuntsu3, flag_sss] = isShuntsu(shuntsu2Counter3);
-      if(flag_sss) returnFlag = true;
-      const [shuntsu2Kotsu1, flag_ssk] = isKotsu(shuntsu2Counter3);
-      if(flag_ssk) returnFlag = true;
-    }
-    const [shuntsu1kotsu1Counter3, flag_sk] = isKotsu(shuntsu1Counter6);
-		if(flag_sk){
-			const [shuntsu1kotsu1shuntsu1, flag_sks] = isShuntsu(shuntsu1kotsu1Counter3);
-			if(flag_sks) returnFlag = true;
-			const [shuntsu1Kotsu2, flag_skk] = isKotsu(shuntsu1kotsu1Counter3);
-			if(flag_skk) returnFlag = true;
-		}
-	}
-	const [kotsu1Counter6, flag_k] = isKotsu(counter9);
-	if(flag_k){
-		const [kotsu1shuntsu1Counter3, flag_ks] = isShuntsu(kotsu1Counter6);
-		if(flag_ks){
-			const [kotsu1shuntsu2, flag_kss] = isShuntsu(kotsu1shuntsu1Counter3);
-			if(flag_kss) returnFlag = true;
-			const [kotsu1shuntsu1kotsu1, flag_ksk] = isKotsu(kotsu1shuntsu1Counter3);
-			if(flag_ksk) returnFlag = true;
-		}
-		const [kotsu2Counter3, flag_kk] = isKotsu(kotsu1Counter6);
-		if(flag_kk){
-			const [kotsu2shuntsu1, flag_kks] = isShuntsu(kotsu2Counter3);
-			if(flag_kks) returnFlag = true;
-			const [kotsu3, flag_kkk] = isKotsu(kotsu2Counter3);
-			if(flag_kkk) returnFlag = true;
-		}
-	}
+	const [shuntsu1, flag_s] = isShuntsu(counter3);
+	if(flag_s) returnFlag = true;
+	const [kotsu1, flag_k] = isKotsu(counter3);
+	if(flag_k) returnFlag = true;
+
+	return returnFlag;
+}
+
+const isMentsu2 = (counter6: paiCounter[]): boolean => {
+	let returnFlag: boolean = false;
+
+	const [shuntsu1Counter3, flag_s] = isShuntsu(counter6);
+	if(flag_s && isMentsu1(shuntsu1Counter3)) returnFlag = true;
+	const [kotsu1Counter3, flag_k] = isKotsu(counter6);
+	if(flag_k && isMentsu1(kotsu1Counter3)) returnFlag = true;
+
+	return returnFlag;
+}
+
+const isMentsu3 = (counter9: paiCounter[]): boolean => {
+	let returnFlag: boolean = false;
+
+	const [shuntsu1Counter6, flag_s] = isShuntsu(counter9);
+	if(flag_s && isMentsu2(shuntsu1Counter6)) returnFlag = true;
+	const [kotsu1Counter6, flag_k] = isShuntsu(counter9);
+	if(flag_k && isMentsu2(kotsu1Counter6)) returnFlag = true;
+
+	return returnFlag;
+}
+
+const isMentsu4 = (counter12: paiCounter[]): boolean => {
+	let returnFlag: boolean = false;
+
+	const [shuntsu1Counter9, flag_s] = isShuntsu(counter12);
+	if(flag_s && isMentsu3(shuntsu1Counter9)) returnFlag = true;
+	const [kotsu1Counter9, flag_k] = isKotsu(counter12);
+	if(flag_k && isMentsu3(kotsu1Counter9)) returnFlag = true;
 
 	return returnFlag;
 }
 
 // 対子も含む
-const isMentsu3Tatsu1 = (counter: paiCounter[]) => {
+const isMentsu0Tatsu1 = (counter2: paiCounter[]) => {
 	let machi_info: Machi_info[] = [];
 	// まず対子から
-	for(let i = 0; i<counter.length; i++){
-		const [toitsu1Counter9, flag_to] = isToitsu(counter, i);
+	for(let i = 0; i<counter2.length; i++){
+		const [toitsu1, flag_to] = isToitsu(counter2, i);
+		if(flag_to) machi_info.push({machi: "shabo", pai: counter2[i].pai})
+	}
+
+	// 次に塔子
+	for(let i = 0; i<counter2.length; i++){
+		for(let j = i+1; j<counter2.length; j++){
+			const [tatsu1, flag_ta, machi, machi_pai] = isTatsu(counter2, i, j);
+			if(flag_ta && machi !== "") machi_pai.forEach(machi_p => {machi_info.push({machi: machi, pai: machi_p})});
+		}
+	}
+	return machi_info;
+}
+
+// 対子も含む
+const isMentsu1Tatsu1 = (counter5: paiCounter[]) => {
+	let machi_info: Machi_info[] = [];
+	// まず対子から
+	for(let i = 0; i<counter5.length; i++){
+		const [toitsu1Counter3, flag_to] = isToitsu(counter5, i);
 		if(flag_to){
-			if(isMentsu3(toitsu1Counter9)){
-				machi_info.push({machi: "shabo", pai: counter[i].pai})
+			if(isMentsu1(toitsu1Counter3)){
+				machi_info.push({machi: "shabo", pai: counter5[i].pai})
 			}
 		}
 	}
 
 	// 次に塔子
-	for(let i = 0; i<counter.length; i++){
-		for(let j = i+1; j<counter.length; j++){
-			const [tatsu1Counter9, flag_ta, machi, machi_pai] = isTatsu(counter, i, j);
+	for(let i = 0; i < counter5.length; i++){
+		for(let j = i+1; j < counter5.length; j++){
+			const [tatsu1Counter3, flag_ta, machi, machi_pai] = isTatsu(counter5, i, j);
+			if(flag_ta && machi !== ""){
+				if(isMentsu1(tatsu1Counter3)){
+					machi_pai.forEach(machi_p => {machi_info.push({machi: machi, pai: machi_p})});
+				}
+			}
+		}
+	}
+	return machi_info;
+}
+
+// 対子も含む
+const isMentsu2Tatsu1 = (counter8: paiCounter[]) => {
+	let machi_info: Machi_info[] = [];
+	// まず対子から
+	for(let i = 0; i<counter8.length; i++){
+		const [toitsu1Counter6, flag_to] = isToitsu(counter8, i);
+		if(flag_to){
+			if(isMentsu2(toitsu1Counter6)){
+				machi_info.push({machi: "shabo", pai: counter8[i].pai})
+			}
+		}
+	}
+
+	// 次に塔子
+	for(let i = 0; i<counter8.length; i++){
+		for(let j = i+1; j<counter8.length; j++){
+			const [tatsu1Counter6, flag_ta, machi, machi_pai] = isTatsu(counter8, i, j);
+			if(flag_ta && machi !== ""){
+				if(isMentsu2(tatsu1Counter6)){
+					machi_pai.forEach(machi_p => {machi_info.push({machi: machi, pai: machi_p})});
+				}
+			}
+		}
+	}
+	return machi_info;
+}
+
+// 対子も含む
+const isMentsu3Tatsu1 = (counter11: paiCounter[]) => {
+	let machi_info: Machi_info[] = [];
+	// まず対子から
+	for(let i = 0; i<counter11.length; i++){
+		const [toitsu1Counter9, flag_to] = isToitsu(counter11, i);
+		if(flag_to){
+			if(isMentsu3(toitsu1Counter9)){
+				machi_info.push({machi: "shabo", pai: counter11[i].pai})
+			}
+		}
+	}
+
+	// 次に塔子
+	for(let i = 0; i<counter11.length; i++){
+		for(let j = i+1; j<counter11.length; j++){
+			const [tatsu1Counter9, flag_ta, machi, machi_pai] = isTatsu(counter11, i, j);
 			if(flag_ta && machi !== ""){
 				if(isMentsu3(tatsu1Counter9)){
 					machi_pai.forEach(machi_p => {machi_info.push({machi: machi, pai: machi_p})});
@@ -177,54 +252,56 @@ const isMentsu3Tatsu1 = (counter: paiCounter[]) => {
 	return machi_info;
 }
 
-const isMentsu4 = (counter: paiCounter[]): boolean => {
-	const [shuntsu1Counter9, flag] = isShuntsu(counter);
-	if(flag){
-		if(isMentsu3(shuntsu1Counter9)) return true;
-	}
-
-	const [kotsu1Counter9, flag2] = isKotsu(counter);
-	if(flag2){
-		if(isMentsu3(kotsu1Counter9)) return true;
-	}
-
-	return false;
-}
-
-export const isTenpai = (game_tehai: GamePai[]): Pai[] => {
-	const tehai = game_tehai.map(p => p.kind);
-	const pai_counter: paiCounter[] = [];
-	for(const pai of tehai){
-		const pai_exist: Pai[] = pai_counter.map(counter => counter.pai);
-		const idx: number = pai_exist.indexOf(pai);
-		if(idx !== -1){
-			pai_counter[idx].count += 1;
-		} else {
-			pai_counter.push({pai: pai, count: 1});
-		}
-	}
-	// console.log(pai_counter);
+export const isTenpai = (menzen_tehai: GamePai[]): Pai[] => {
+	const pai_counter: paiCounter[] = createCounter(menzen_tehai);
 
 	const machi_set = new Set<Pai>();
 	for(let i = 0; i < pai_counter.length; i++){
 		if(pai_counter[i].count === 1){
-			const counter12 = delete_n(pai_counter, pai_counter[i], 1);
-			if(isMentsu4(counter12)) {
+			const counterMinus1 = delete_n(pai_counter, pai_counter[i], 1);
+			if(menzen_tehai.length === 13 && isMentsu4(counterMinus1)) {
+				machi_set.add(pai_counter[i].pai);
+			}
+			if(menzen_tehai.length === 10 && isMentsu3(counterMinus1)) {
+				machi_set.add(pai_counter[i].pai);
+			}
+			if(menzen_tehai.length === 7 && isMentsu2(counterMinus1)) {
+				machi_set.add(pai_counter[i].pai);
+			}
+			if(menzen_tehai.length === 4 && isMentsu1(counterMinus1)) {
 				machi_set.add(pai_counter[i].pai);
 			}
 		}
 		else if(pai_counter[i].count === 2 || pai_counter[i].count === 4){
-			const counter11 = delete_n(pai_counter, pai_counter[i], 2);
-			let machi_info = isMentsu3Tatsu1(counter11);
+			const counterMinus2 = delete_n(pai_counter, pai_counter[i], 2);
+			let machi_info: Machi_info[] = [];
+			if(menzen_tehai.length === 13) machi_info = isMentsu3Tatsu1(counterMinus2);
+			else if(menzen_tehai.length === 10) machi_info = isMentsu2Tatsu1(counterMinus2);
+			else if(menzen_tehai.length === 7) machi_info = isMentsu1Tatsu1(counterMinus2);
+			else if(menzen_tehai.length === 4) machi_info = isMentsu0Tatsu1(counterMinus2);
 			machi_info.forEach(e => {machi_set.add(e.pai)});
 		}
 		else if(pai_counter[i].count === 3){
-			const counter12 = delete_n(pai_counter, pai_counter[i], 1);
-			if(isMentsu4(counter12)) {
+			const counterMinus1 = delete_n(pai_counter, pai_counter[i], 1);
+			if(menzen_tehai.length === 13 && isMentsu4(counterMinus1)) {
 				machi_set.add(pai_counter[i].pai);
 			}
-			const counter11 = delete_n(pai_counter, pai_counter[i], 2);
-			let machi_info = isMentsu3Tatsu1(counter11);
+			if(menzen_tehai.length === 10 && isMentsu3(counterMinus1)) {
+				machi_set.add(pai_counter[i].pai);
+			}
+			if(menzen_tehai.length === 7 && isMentsu2(counterMinus1)) {
+				machi_set.add(pai_counter[i].pai);
+			}
+			if(menzen_tehai.length === 4 && isMentsu1(counterMinus1)) {
+				machi_set.add(pai_counter[i].pai);
+			}
+			
+			const counterMinus2 = delete_n(pai_counter, pai_counter[i], 2);
+			let machi_info: Machi_info[] = [];
+			if(menzen_tehai.length === 13) machi_info = isMentsu3Tatsu1(counterMinus2);
+			else if(menzen_tehai.length === 10) machi_info = isMentsu2Tatsu1(counterMinus2);
+			else if(menzen_tehai.length === 7) machi_info = isMentsu1Tatsu1(counterMinus2);
+			else if(menzen_tehai.length === 4) machi_info = isMentsu0Tatsu1(counterMinus2);
 			machi_info.forEach(e => {machi_set.add(e.pai)});
 		}
 		else{
@@ -235,4 +312,32 @@ export const isTenpai = (game_tehai: GamePai[]): Pai[] => {
 	let res: Pai[] = [];
 	machi_set.forEach(machi_pai => {res.push(machi_pai)});
 	return res;
+}
+
+export const ponList = (game_tehai: GamePai[]): Pai[] => {
+	const pai_counter: paiCounter[] = createCounter(game_tehai);
+
+	const pon_list: Pai[] = [];
+	for(let i = 0; i < pai_counter.length; i++){
+		if(pai_counter[i].count === 2 || pai_counter[i].count === 3){
+			pon_list.push(pai_counter[i].pai);
+		}
+	}
+	return pon_list;
+}
+
+const createCounter = (game_tehai: GamePai[]): paiCounter[] => {
+	const tehai: Pai[] = game_tehai.map(p => p.kind);
+	const pai_counter: paiCounter[] = [];
+
+	for(const pai of tehai){
+		const pai_exist: Pai[] = pai_counter.map(counter => counter.pai);
+		const idx: number = pai_exist.indexOf(pai);
+		if(idx !== -1){
+			pai_counter[idx].count += 1;
+		} else {
+			pai_counter.push({pai: pai, count: 1});
+		}
+	}
+	return pai_counter;
 }

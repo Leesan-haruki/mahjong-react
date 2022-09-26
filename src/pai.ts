@@ -9,8 +9,15 @@ export type Pai = {
 }
 
 export type GamePai = {
-	unique: number
-	kind: Pai
+	unique: number,
+	kind: Pai,
+	decided: boolean
+	side: boolean
+}
+
+export type Tehai = {
+	menzen: GamePai[],
+	fuuro: GamePai[]
 }
 
 export const allPaiNum:number = 136;
@@ -73,4 +80,27 @@ export const sortTehai = (tehai:GamePai[]): GamePai[] => {
     }
   })
   return tehai;
+}
+
+export const getPon = (tehai: Tehai, pai: GamePai, now_user: number, from_user: number): Tehai => {
+	const res: Tehai = {menzen: [], fuuro: [...tehai.fuuro]};
+	const fuuro_num = tehai.fuuro.length;
+	res.fuuro.push(pai);
+
+	for(let i = 0; i < tehai.menzen.length; i++){
+		if(tehai.menzen[i].kind.name === pai.kind.name && res.fuuro.length < fuuro_num + 3) res.fuuro.push(tehai.menzen[i]);
+		else res.menzen.push(tehai.menzen[i]);
+	}
+
+	if((now_user - from_user + 4) % 4 === 1){
+		res.fuuro[res.fuuro.length - 3].side = true;
+	}
+	else if((now_user - from_user + 4) % 4 === 2){
+		res.fuuro[res.fuuro.length - 2].side = true;
+	}
+	else{
+		res.fuuro[res.fuuro.length - 1].side = true;
+	}
+
+	return res;
 }
