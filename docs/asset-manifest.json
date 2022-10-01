@@ -1,0 +1,22 @@
+{
+  "files": {
+    "main.css": "/mahjong-react/static/css/main.9d5b29c0.chunk.css",
+    "main.js": "/mahjong-react/static/js/main.8f939e0b.chunk.js",
+    "main.js.map": "/mahjong-react/static/js/main.8f939e0b.chunk.js.map",
+    "runtime-main.js": "/mahjong-react/static/js/runtime-main.b1548265.js",
+    "runtime-main.js.map": "/mahjong-react/static/js/runtime-main.b1548265.js.map",
+    "static/js/2.23bbcec8.chunk.js": "/mahjong-react/static/js/2.23bbcec8.chunk.js",
+    "static/js/2.23bbcec8.chunk.js.map": "/mahjong-react/static/js/2.23bbcec8.chunk.js.map",
+    "static/js/3.d1194909.chunk.js": "/mahjong-react/static/js/3.d1194909.chunk.js",
+    "static/js/3.d1194909.chunk.js.map": "/mahjong-react/static/js/3.d1194909.chunk.js.map",
+    "index.html": "/mahjong-react/index.html",
+    "static/css/main.9d5b29c0.chunk.css.map": "/mahjong-react/static/css/main.9d5b29c0.chunk.css.map",
+    "static/js/2.23bbcec8.chunk.js.LICENSE.txt": "/mahjong-react/static/js/2.23bbcec8.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.b1548265.js",
+    "static/js/2.23bbcec8.chunk.js",
+    "static/css/main.9d5b29c0.chunk.css",
+    "static/js/main.8f939e0b.chunk.js"
+  ]
+}
