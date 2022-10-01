@@ -9,9 +9,9 @@ export type Pai = {
 }
 
 export type GamePai = {
-	unique: number,
-	kind: Pai,
-	decided: boolean
+	readonly unique: number,
+	readonly kind: Pai,
+	active: boolean
 	side: boolean
 }
 
@@ -103,4 +103,73 @@ export const getPon = (tehai: Tehai, pai: GamePai, now_user: number, from_user: 
 	}
 
 	return res;
+}
+
+export const getTii = (tehai: Tehai, river: GamePai, first:　null | GamePai, second: GamePai): Tehai => {
+	const res: Tehai = {menzen: [], fuuro: [...tehai.fuuro]};
+	
+	res.fuuro.push({...river, side: true});
+	for(let pai of tehai.menzen){
+		if(pai.unique === first?.unique) res.fuuro.push({...pai});
+		else if(pai.unique === second.unique) res.fuuro.push({...pai});
+		else res.menzen.push({...pai, active: true});
+	}
+
+	return res;
+}
+
+export const getFirstTii = (tehai: Tehai, river: GamePai): Tehai => {
+	let paiMinus1: boolean = false;
+	let paiPlus1: boolean = false;
+	for(let menzenhai of tehai.menzen){
+		menzenhai.active = false;
+		if(menzenhai.kind.shuntsuAble && menzenhai.kind.kind === river.kind.kind && river.kind.num - menzenhai.kind.num === -1){
+			paiMinus1 = true;
+			menzenhai.active = true;
+		}
+		if(menzenhai.kind.shuntsuAble && menzenhai.kind.kind === river.kind.kind && river.kind.num - menzenhai.kind.num === 1){
+			paiPlus1 = true;
+			menzenhai.active = true;
+		}
+	}
+	for(let menzenhai of tehai.menzen){
+		if(paiMinus1 && menzenhai.kind.shuntsuAble && menzenhai.kind.kind === river.kind.kind && 
+			river.kind.num - menzenhai.kind.num === -2) menzenhai.active = true;
+		if(paiPlus1 && menzenhai.kind.shuntsuAble && menzenhai.kind.kind === river.kind.kind &&
+			river.kind.num - menzenhai.kind.num === 2) menzenhai.active = true;
+	}
+	return tehai;
+}
+
+export const getSecondTii = (tehai: Tehai, river: GamePai, first: GamePai): Tehai => {
+	const tii_value: number = river.kind.num - first.kind.num;
+	for(let menzenhai of tehai.menzen){
+		menzenhai.active = false;
+		if(tii_value === 2 && menzenhai.kind.shuntsuAble && menzenhai.kind.kind === river.kind.kind &&
+			river.kind.num - menzenhai.kind.num === 1){
+			menzenhai.active = true;
+		}
+		if(tii_value === 1 && menzenhai.kind.shuntsuAble && menzenhai.kind.kind === river.kind.kind &&
+			river.kind.num - menzenhai.kind.num === 2){
+			menzenhai.active = true;
+		}
+		if(tii_value === 1 && menzenhai.kind.shuntsuAble && menzenhai.kind.kind === river.kind.kind &&
+			river.kind.num - menzenhai.kind.num === -1){
+			menzenhai.active = true;
+		}
+		if(tii_value === -1 && menzenhai.kind.shuntsuAble && menzenhai.kind.kind === river.kind.kind &&
+			river.kind.num - menzenhai.kind.num === -2){
+			menzenhai.active = true;
+		}
+		if(tii_value === -1 && menzenhai.kind.shuntsuAble && menzenhai.kind.kind === river.kind.kind &&
+			river.kind.num - menzenhai.kind.num === 1){
+			menzenhai.active = true;
+		}
+		if(tii_value === -2 && menzenhai.kind.shuntsuAble && menzenhai.kind.kind === river.kind.kind &&
+			river.kind.num - menzenhai.kind.num === -1){
+			menzenhai.active = true;
+		}
+	}
+
+	return tehai;
 }

@@ -1,14 +1,18 @@
+import internal from 'stream'
 import { GamePai, Pai, Tehai } from './pai'
 
 export type User = {
-	userId: number,
+	user_id: number,
 	tehai: Tehai,
 	fuuro: GamePai[],
 	river: GamePai[],
 	machi: Pai[],
 	pon: Pai[],
+	tii: Pai[],
 	ron_waiting: boolean,
-	pon_waiting: boolean
+	pon_waiting: boolean,
+	tii_waiting: boolean,
+	now_tii: GamePai[]
 }
 
 export type KyokuState = {
@@ -16,6 +20,7 @@ export type KyokuState = {
 	tsumo_num: number,
 	finish: boolean,
 	suspend: boolean,
+	waiting_actions: number,
 	userState: User[]
 }
 
@@ -32,5 +37,11 @@ export const isRonUser = (pai: Pai, machi: Pai[], river: Pai[]): boolean => {
 
 export const isPonUser = (pai: Pai, pon_list: Pai[]): boolean => {
 	if(pon_list.indexOf(pai) !== -1) return true;
+	return false;
+}
+
+export const isTiiUser = (pai: Pai, tii_list: Pai[], now_user: number, old_user: number): boolean => {
+	if((now_user - old_user + 4) % 4 !== 1) return false;
+	if(tii_list.indexOf(pai) !== -1) return true;
 	return false;
 }

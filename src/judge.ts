@@ -326,6 +326,21 @@ export const ponList = (game_tehai: GamePai[]): Pai[] => {
 	return pon_list;
 }
 
+export const tiiList = (game_tehai: GamePai[]): Pai[] => {
+	const pai_counter: paiCounter[] = createCounter(game_tehai);
+	const tii_set = new Set<Pai>();
+
+	for(let i = 0; i < pai_counter.length; i++){
+		for(let j = i+1; j < pai_counter.length; j++){
+			const [_, flag_ta, machi, machi_pai] = isTatsu(pai_counter, i, j);
+			if(flag_ta && machi !== "") machi_pai.forEach(machi_p => {tii_set.add(machi_p)});
+		}
+	}
+	const tii_list: Pai[] = [];
+	tii_set.forEach(tii_pai => {tii_list.push(tii_pai)});
+	return tii_list;
+}
+
 const createCounter = (game_tehai: GamePai[]): paiCounter[] => {
 	const tehai: Pai[] = game_tehai.map(p => p.kind);
 	const pai_counter: paiCounter[] = [];
