@@ -80,7 +80,7 @@ const UserField:React.FC<{
     <h3>
       { wind[user.user_id] }
       { user.machi.length > 0 ? user.machi.map((e, i) => {
-        return <img key={ i } src={ `/img/${e.filename}` } alt={ e.name } style={{ "height": "28px" }} /> 
+        return <img key={ i } src={ `${process.env.PUBLIC_URL}/img/${e.filename}` } alt={ e.name } style={{ "height": "28px" }} /> 
       }) : null }
       { user.machi.indexOf(paiyama[kyokuState.tsumo_num].kind) !== -1 && user.user_id === kyokuState.activeUser && !kyokuState.suspend ? 
         <><button onClick={() => { changeKyokuState({ ...kyokuState, finish: true }) }}>ツモ</button></> : null }
@@ -131,7 +131,7 @@ const UserField:React.FC<{
     <span>　　　</span>
     { (user.user_id === kyokuState.activeUser && !waiting) ? <Tile tile={ paiyama[kyokuState.tsumo_num] } user={ user }
       paiyama={ paiyama } kyokuState={ kyokuState } changeKyokuState={ changeKyokuState } />
-      : <img src={`/img/1m.gif`} style={{"visibility": 'hidden'}} alt="fa" /> }
+      : <img src={`${process.env.PUBLIC_URL}/img/1m.gif`} style={{"visibility": 'hidden'}} alt="fa" /> }
     <span>　　　</span>
     <River tiles={ user.river } />
   </>
@@ -161,7 +161,7 @@ const Tile:React.FC<{
   tile:GamePai, user:User, paiyama:GamePai[], kyokuState:KyokuState,
   changeKyokuState: React.Dispatch<React.SetStateAction<KyokuState>>
 }> = ({ tile, user, paiyama, kyokuState, changeKyokuState }) => {
-  return <img src={ `/img/${tile.kind.filename}` } alt={ tile.kind.name } 
+  return <img src={ `${process.env.PUBLIC_URL}/img/${tile.kind.filename}` } alt={ tile.kind.name } 
       style={ ( user.user_id === kyokuState.activeUser && !kyokuState.finish && !kyokuState.suspend ) ? 
         ( tile.active ? {cursor: 'pointer'} : {cursor: 'not-allowed', opacity: 0.5} ) : {cursor: 'not-allowed', opacity: 0.5}
       }
@@ -264,9 +264,9 @@ const Wanpai:React.FC<{ paiyama:GamePai[] }> = ({ paiyama }) => {
 
 const StaticTile:React.FC<{ tile:GamePai, hidden?:boolean }> = ({ tile, hidden }) => {
   if(hidden){
-    return <img src={ `/img/ura.png` } alt={ "ura" } />
+    return <img src={ `${process.env.PUBLIC_URL}/img/ura.png` } alt={ "ura" } />
   }
-  return <img src={ `/img/${tile.kind.filename}` } alt={ tile.kind.name } style={ tile.side ? {transform: "rotate(90deg)" } : {} } />
+  return <img src={ `${process.env.PUBLIC_URL}/img/${tile.kind.filename}` } alt={ tile.kind.name } style={ tile.side ? {transform: "rotate(90deg)" } : {} } />
 }
 
 export default App;
